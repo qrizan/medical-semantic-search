@@ -13,16 +13,13 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# global variables
+# singleton — load sekali saat pertama kali dipanggil
 _engine_data = None
-CONFIG = None
-embeddings = None
-metadata = None
 
 # Load embeddings dan metadata (hanya sekali, tidak berubah).
 # client dibuat fresh setiap request untuk menghindari stale connection
 def get_engine_data():
-    global _engine_data, CONFIG, embeddings, metadata
+    global _engine_data
     if _engine_data is None:
         artifacts_dir = Path("artifacts")
 

@@ -1,4 +1,3 @@
-import re
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,23 +13,6 @@ app = FastAPI(title="Medical Semantic Search")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
-# custom Jinja2 filter untuk highlight keywords
-# highlight keywords dari query di dalam text
-def highlight_keywords(text, query):
-    if not query or not text:
-        return text
-    words = query.lower().split()
-    result = text
-    for word in words:
-        
-        # case-insensitive replace dengan mark tag
-        pattern = re.compile(re.escape(word), re.IGNORECASE)
-        result = pattern.sub(lambda m: f"<mark>{m.group()}</mark>", result)
-    return result
-
-# register filter ke Jinja2
-templates.env.filters['highlight_keywords'] = highlight_keywords
-
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, q: str = ""):
@@ -40,18 +22,16 @@ async def index(request: Request, q: str = ""):
     if q.strip():
         try:
             # jalankan semantic_search di thread pool dengan timeout
-            # menggunakan asyncio.to_thread untuk Python 3.9+
-            # jika Python 3.8, gunakan: loop.run_in_executor(None, semantic_search, q.strip())
             results = await asyncio.wait_for(
                 asyncio.to_thread(semantic_search, q.strip()),
-                timeout=25.0  # 25 detik timeout
+                timeout=25.0
             )
         except asyncio.TimeoutError:
             logger.error("Semantic search timeout after 25 seconds")
             error_message = "Request timeout — proses pencarian memakan waktu terlalu lama."
         except Exception as e:
             logger.error(f"Error in semantic_search: {e}", exc_info=True)
-            error_message = f"Terjadi kesalahan: {str(e)}"
+            error_message = "Terjadi kesalahan saat memproses pencarian. Silakan coba lagi."
     
     # cek apakah request dari HTMX (hanya return results)
     if request.headers.get("HX-Request") == "true":

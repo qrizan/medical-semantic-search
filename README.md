@@ -6,6 +6,10 @@ Proyek ini membangun pipeline retrieval secara end-to-end: mulai dari akuisisi d
 
 ---
 
+![Demo](screenshots/demo.png)
+
+---
+
 ## Problem Statement
 
 Pencarian berbasis keyword bergantung pada kecocokan kata secara literal. Dalam domain kesehatan, pengguna sering menggunakan istilah yang berbeda dari terminologi yang digunakan dalam artikel (misalnya bahasa sehari-hari dibanding istilah medis formal). Perbedaan kosakata ini dapat menyebabkan hasil pencarian yang kurang relevan.
@@ -138,9 +142,9 @@ medical-semantic-search/
 │   ├── metadata.json
 │   └── config.json
 ├── Dockerfile
-├── render.yaml
 ├── docker-compose.yml
-└── requirements.txt
+├── requirements.txt
+└── .env.example              # Template environment variables
 ```
 
 ---
@@ -190,7 +194,8 @@ Lihat `.env.example` untuk template.
 
 ## Notes
 
-- Proyek ini dibuat untuk **catatan pembelajaran NLP**, bukan untuk production use
-- ⚠️ **Aplikasi ini adalah DEMO** — hasil pencarian tidak dijamin akurat dan **tidak untuk digunakan sebagai sumber informasi medis**
+⚠️ **Aplikasi ini adalah DEMO** untuk tujuan catatan pembelajaran. Hasil pencarian tidak dijamin akurat dan **tidak untuk digunakan sebagai sumber informasi medis**.
+
+- Dataset terbatas pada 338 artikel hasil keyword crawling
+- Query encoding bergantung pada HuggingFace Inference API (membutuhkan koneksi internet)
 - Artifacts (`embeddings.npy`, `metadata.json`, `config.json`) harus tersedia di folder `artifacts/` untuk aplikasi berjalan
-- Query encoding bergantung pada HuggingFace Inference API (membutuhkan koneksi internet saat runtime)
