@@ -23,20 +23,14 @@ Proyek ini mengevaluasi sejauh mana pendekatan dense retrieval multilingual dapa
 - **Chunks:** 5,793 paragraph chunk
 - Dataset dibekukan setelah proses akuisisi untuk menjaga konsistensi evaluasi
 
-Lihat [MODELING.md](MODELING.md) untuk detail lengkap tentang proses akuisisi data dan chunking.
-
 ### System Design
 
 **Offline — Indexing Pipeline:** Scraping → Chunking → Embedding → Normalization  
 **Online — Retrieval Flow:** Query encoding → Similarity calculation → Ranking → Display
 
-Lihat [MODELING.md](MODELING.md) untuk detail pipeline offline dan [RETRIEVAL.md](RETRIEVAL.md) untuk detail proses retrieval.
-
 ### Evaluation
 
 Evaluasi dilakukan pada 20 query uji dengan metrik Top-1 Accuracy, Top-3 Accuracy, Recall@5, dan MRR.
-
-Lihat [MODELING.md](MODELING.md#06--retrieval-evaluation) untuk detail lengkap hasil evaluasi dan analisis.
 
 ---
 
@@ -58,15 +52,12 @@ Lihat [MODELING.md](MODELING.md#06--retrieval-evaluation) untuk detail lengkap h
 - Query encoding bergantung pada HuggingFace Inference API (membutuhkan koneksi internet)
 - Sistem merupakan baseline dense retrieval tanpa hybrid search, re-ranking, atau fine-tuning
 
-Lihat [MODELING.md](MODELING.md#catatan) untuk analisis lengkap tentang keterbatasan dan trade-off desain sistem.
 
 ---
 
 ## Models Lifecycle
 
 Pipeline end-to-end: Data Acquisition → Text Chunking → Embedding → Retrieval → Evaluation → Export
-
-Lihat [MODELING.md](MODELING.md) untuk detail lengkap setiap tahap pipeline, output yang dihasilkan, dan konfigurasi model.
 
 ---
 
@@ -130,8 +121,8 @@ curl "http://localhost:8000/?q=gejala%20diabetes"
 ```
 medical-semantic-search/
 ├── app/
-│   ├── main.py              # FastAPI application
-│   ├── engine.py            # Retrieval engine (semantic search)
+│   ├── main.py               # FastAPI application
+│   ├── engine.py             # Retrieval engine (semantic search)
 │   ├── templates/            # HTML templates (Jinja2)
 │   │   ├── index.html
 │   │   └── results.html
