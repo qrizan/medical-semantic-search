@@ -52,10 +52,10 @@ def create_client():
 # bersihkan teks chunk untuk ditampilkan sebagai snippet.   
 #   - hapus heading Mediawiki (== Judul ==, === Sub ===, dst.)
 #   - potong di akhir kalimat terdekat agar tidak terpotong di tengah.
-def clean_snippet(text: str, max_chars: int = 450) -> str:
+def clean_snippet(text: str, max_chars: int = 650) -> str:
 
-    # hapus heading Mediawiki: == ... ==  /  === ... ===  dst.
-    text = re.sub(r'={1,4}[^=\n]+={1,4}', '', text)
+    # hapus heading Mediawiki: == ... == hingga ====== ... ======
+    text = re.sub(r'={1,6}[^=\n]+={1,6}', '', text)
     # kolapskan whitespace berlebih
     text = re.sub(r'\s+', ' ', text).strip()
 

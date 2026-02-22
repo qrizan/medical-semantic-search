@@ -51,6 +51,7 @@ Evaluasi dilakukan pada 20 query uji dengan metrik Top-1 Accuracy, Top-3 Accurac
 - Evaluasi menggunakan 20 query dengan ground truth manual; ukuran evaluasi relatif kecil
 - Query encoding bergantung pada HuggingFace Inference API (membutuhkan koneksi internet)
 - Sistem merupakan baseline dense retrieval tanpa hybrid search, re-ranking, atau fine-tuning
+- Kualitas snippet tidak selalu rapi, teks chunk bisa dimulai tanpa konteks karena konsekuensi dari overlap chunking
 
 
 ---
