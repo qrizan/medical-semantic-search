@@ -1,0 +1,46 @@
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# git
+.git/
+.gitignore
+
+# documentation
+*.md
+!README.md
+
+# notebooks
+notebooks/
+
+# data (tidak perlu di image, hanya artifacts yang diperlukan)
+data/
+
+# build artifacts
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log

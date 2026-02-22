@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: medical-semantic-search
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: HF_TOKEN
+        sync: false
+

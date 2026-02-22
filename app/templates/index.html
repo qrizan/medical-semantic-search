@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Semantic Search</title>
+    <link rel="stylesheet" href="/static/style.css">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+
+    <script>
+    /*
+       alpine component factory — dipanggil dari x-data results.html
+       menerima data langsung sebagai argumen
+    */
+    function resultsData(results, query) {
+        return {
+            results:         results || [],
+            query:           query   || '',
+            filteredResults: [],
+
+            init() {
+                
+                // hitung berapa kali setiap artikel muncul (untuk label "Bagian ke-N dari ...")
+                const seen = new Map();
+                this.filteredResults = this.results.map(r => {
+                    const count = (seen.get(r.article_title) || 0) + 1;
+                    seen.set(r.article_title, count);
+                    return Object.assign({}, r, {
+                        isDuplicate: count > 1,
+                        chunkIndex:  count
+                    });
+                });
+            },
+
+            wikiUrl(title) {
+                return 'https://id.wikipedia.org/wiki/' +
+                       encodeURIComponent(String(title).replace(/ /g, '_'));
+            }
+        };
+    }
+
+    /* highlight keywords dalam snippet */
+    function highlightKeywords(text, query) {
+        if (!query || !text) return String(text || '');
+        const words = String(query).split(' ').map(w => w.trim()).filter(w => w.length > 0);
+        let result = String(text);
+        words.forEach(word => {
+            const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            if (escaped) {
+                result = result.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
+            }
+        });
+        return result;
+    }
+
+    /* isi input pencarian dari contoh query di sidebar */
+    function fillQuery(text) {
+        const input = document.querySelector('input[name="q"]');
+        if (!input) return;
+        input.value = text;
+        input.focus();
+    }
+
+    /* button loading state — reset di semua event */
+    function resetLoadingState() {
+        const btn = document.querySelector('.search-btn');
+        if (btn) btn.classList.remove('is-loading');
+        // Pastikan loading bar juga hilang
+        const loadingBar = document.getElementById('loading');
+        if (loadingBar) loadingBar.style.display = 'none';
+    }
+
+    let requestTimeout = null;
+
+    document.addEventListener('htmx:beforeRequest', function() {
+        const btn = document.querySelector('.search-btn');
+        if (btn) btn.classList.add('is-loading');
+        
+        // clear timeout sebelumnya jika ada
+        if (requestTimeout) clearTimeout(requestTimeout);
+        
+        // set timeout 30 detik sebagai fallback
+        requestTimeout = setTimeout(function() {
+            resetLoadingState();
+            const container = document.getElementById('results-container');
+            if (container && container.querySelector('.htmx-indicator')) {
+                container.innerHTML =
+                    '<div class="error-state">' +
+                    '<div class="error-icon">⏱️</div>' +
+                    '<p>Request memakan waktu terlalu lama.</p>' +
+                    '<p class="error-sub">Silakan refresh halaman atau coba lagi.</p>' +
+                    '</div>';
+            }
+        }, 30000); // 30 detik
+    });
+
+    document.addEventListener('htmx:afterRequest', function() {
+        resetLoadingState();
+        // clear manual timeout jika request selesai
+        if (requestTimeout) {
+            clearTimeout(requestTimeout);
+            requestTimeout = null;
+        }
+    });
+    
+    document.addEventListener('htmx:afterSettle', resetLoadingState);
+    document.addEventListener('htmx:afterSwap', resetLoadingState);
+
+    /*
+       error handling — reset loading dan tampilkan pesan
+ */
+    document.addEventListener('htmx:responseError', function(evt) {
+        resetLoadingState();
+        const container = document.getElementById('results-container');
+        if (container) {
+            container.innerHTML =
+                '<div class="error-state">' +
+                '<div class="error-icon">⚠️</div>' +
+                '<p>Terjadi kesalahan pada server.</p>' +
+                '<p class="error-sub">Silakan coba beberapa saat lagi.</p>' +
+                '</div>';
+        }
+    });
+
+    document.addEventListener('htmx:sendError', function(evt) {
+        resetLoadingState();
+        const container = document.getElementById('results-container');
+        if (container) {
+            container.innerHTML =
+                '<div class="error-state">' +
+                '<div class="error-icon">📡</div>' +
+                '<p>Tidak dapat terhubung ke server.</p>' +
+                '<p class="error-sub">Periksa koneksi internet Anda.</p>' +
+                '</div>';
+        }
+    });
+
+    document.addEventListener('htmx:timeout', function(evt) {
+        resetLoadingState();
+        const container = document.getElementById('results-container');
+        if (container) {
+            container.innerHTML =
+                '<div class="error-state">' +
+                '<div class="error-icon">⏱️</div>' +
+                '<p>Request timeout — server tidak merespons.</p>' +
+                '<p class="error-sub">Silakan coba lagi.</p>' +
+                '</div>';
+        }
+    });
+
+    </script>
+</head>
+<body>
+    <div class="layout">
+
+        <!-- ======= SIDEBAR ======= -->
+        <aside class="sidebar">
+            <div class="sidebar-inner">
+
+                <!-- Brand -->
+                <div class="brand">
+                    <div class="brand-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1>Medical Search</h1>
+                        <span class="brand-sub">Semantic Retrieval System</span>
+                    </div>
+                </div>
+
+                <!-- Search Form -->
+                <form
+                    class="search-form"
+                    hx-get="/"
+                    hx-target="#results-container"
+                    hx-swap="innerHTML"
+                    hx-indicator="#loading"
+                    hx-push-url="true"
+                    hx-timeout="25000">
+
+                    <div class="input-wrapper">
+                        <input
+                            type="text"
+                            name="q"
+                            value="{{ query }}"
+                            placeholder="Cari topik kesehatan..."
+                            class="search-input"
+                            autocomplete="off"
+                            autofocus>
+                    </div>
+
+                    <button type="submit" class="search-btn">
+                        <span class="btn-text">Cari</span>
+                        <span class="btn-loading" style="display:none">Mencari…</span>
+                    </button>
+                </form>
+
+                <!-- Divider -->
+                <div class="sidebar-divider"></div>
+
+                <!-- Example queries -->
+                <div class="sidebar-section">
+                    <h3 class="section-label">Contoh Query</h3>
+                    <div class="example-list">
+                        <button class="example-btn" type="button" onclick="fillQuery('gejala diabetes')"><span class="eq-icon">🩺</span>gejala diabetes</button>
+                        <button class="example-btn" type="button" onclick="fillQuery('penyebab stroke')"><span class="eq-icon">🧠</span>penyebab stroke</button>
+                        <button class="example-btn" type="button" onclick="fillQuery('pengobatan asma')"><span class="eq-icon">🫁</span>pengobatan asma</button>
+                        <button class="example-btn" type="button" onclick="fillQuery('penyebab sakit kepala')"><span class="eq-icon">🤕</span>penyebab sakit kepala</button>
+                        <button class="example-btn" type="button" onclick="fillQuery('pengobatan depresi')"><span class="eq-icon">💊</span>pengobatan depresi</button>
+                    </div>
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="sidebar-footer">
+                    <div class="disclaimer-footer">
+                        <span class="disclaimer-footer-icon">⚠️</span>
+                        <p>Ini adalah demo retrieval end-to-end, bukan sistem medis nyata. Tidak untuk diagnosis atau penggunaan klinis.</p>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- ======= MAIN AREA ======= -->
+        <main class="main">
+
+            <!-- Loading bar (top of main) -->
+            <div id="loading" class="htmx-indicator loading-bar">
+                <div class="loading-bar-inner"></div>
+            </div>
+
+            <!-- Error state untuk full page load -->
+            {% if error_message %}
+            <div class="error-state">
+                <div class="error-icon">⚠️</div>
+                <p>{{ error_message }}</p>
+                <p class="error-sub">Silakan coba lagi.</p>
+            </div>
+            {% endif %}
+
+            <!-- Results container — HTMX target -->
+            <div id="results-container" class="results-wrapper">
+                {% if not error_message %}
+                {% include "results.html" %}
+                {% endif %}
+            </div>
+
+        </main>
+    </div>
+</body>
+</html>

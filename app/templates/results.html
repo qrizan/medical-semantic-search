@@ -1,0 +1,84 @@
+{% if query and results %}
+<div x-data='resultsData({{ results | tojson | safe }}, {{ query | tojson | safe }})'>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+        <span class="result-count" x-text="filteredResults.length"></span>
+        <span class="result-for">hasil untuk &ldquo;<strong>{{ query }}</strong>&rdquo;</span>
+    </div>
+
+    <!-- Result cards -->
+    <div class="result-list">
+        <template x-for="r in filteredResults" :key="r.chunk_id">
+            <article class="result-card">
+
+                <!-- Meta row -->
+                <div class="card-meta">
+                    <span class="card-chunk" x-text="'Chunk ID: ' + r.chunk_id"></span>
+                    <span class="card-score" x-text="'Score: ' + r.score.toFixed(4)"></span>
+                </div>
+
+                <!-- Title -->
+                <h2 class="card-title" x-text="r.article_title"></h2>
+
+                <!-- Snippet with highlight -->
+                <p class="card-snippet" x-html="highlightKeywords(r.snippet, query) + '…'"></p>
+
+                <!-- Actions: badge kiri (jika duplikat) + wiki kanan -->
+                <div class="card-actions">
+                    <span
+                        x-show="r.isDuplicate"
+                        class="dup-badge"
+                        x-text="'Bagian ke-' + r.chunkIndex + ' dari \u201c' + r.article_title + '\u201d'">
+                    </span>
+                    <a
+                        class="wiki-link"
+                        :href="wikiUrl(r.article_title)"
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        Wikipedia ↗
+                    </a>
+                </div>
+
+            </article>
+        </template>
+    </div>
+
+</div>
+
+{% elif query %}
+<div class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <p>Tidak ditemukan hasil untuk &ldquo;<strong>{{ query }}</strong>&rdquo;.</p>
+    <p class="empty-sub">Coba gunakan kata kunci yang lebih umum.</p>
+</div>
+
+{% else %}
+<div class="landing">
+    <div class="landing-icon">🏥</div>
+    <h2 class="landing-title">Cari Informasi Kesehatan</h2>
+    <p class="landing-desc">
+        Ketik kata kunci di kotak pencarian untuk menemukan artikel medis
+        dalam Bahasa Indonesia menggunakan semantic retrieval.
+    </p>
+    <div class="landing-stats">
+        <div class="stat-card">
+            <strong>338</strong>
+            <span>Artikel</span>
+        </div>
+        <div class="stat-card">
+            <strong>5,793</strong>
+            <span>Chunks</span>
+        </div>
+        <div class="stat-card">
+            <strong>384</strong>
+            <span>Dimensi</span>
+        </div>
+        <div class="stat-card">
+                    <strong>0.24</strong>
+                    <span>Top-1 Acc.</span>
+                </div>
+    </div>
+    <p class="landing-hint">Pilih contoh query di sidebar kiri untuk mencoba.</p>
+</div>
+{% endif %}
